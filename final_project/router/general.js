@@ -28,45 +28,100 @@ public_users.post("/register", (req,res) => {
 });
 
 // Get the book list available in the shop
-public_users.get('/',function (req, res) {
-  //Write your code here
-  res.send(JSON.stringify(books, null, 4));
+public_users.get('/', async function (req, res) {
+    try {
+      // Create a Promise to get books
+      const getBooksPromise = new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (books) {
+            resolve(books);
+          } else {
+            reject(new Error("Books data not available"));
+          }
+        }, 100);
+      });
   
-});
-
-// Get book details based on ISBN
-public_users.get('/isbn/:isbn',function (req, res) {
-    let num = parseInt(req.params.isbn)
-    if (num < 1 || num > 10) {
-        // Send error message
-        res.send("Select a correct isbn");
-    } else {
-        res.send("Book Searched: " + JSON.stringify(books[num], null, 4));
+      // Await the Promise
+      const booksData = await getBooksPromise;
+      res.send(JSON.stringify(booksData, null, 4));
+      
+    } catch (error) {
+      res.status(500).json({
+        message: "Error retrieving books",
+        error: error.message
+      });
     }
-
- }); 
-  
-// Get book details based on author
-public_users.get('/author/:author',function (req, res) {
-    const authorName = req.params.author;
-    const result = {};
-    
-    // Iterate through books object
-    Object.keys(books).forEach(isbn => {
-      if (books[isbn].author.toLowerCase() === authorName.toLowerCase()) {
-        result[isbn] = books[isbn];
-      }
-    });
-    
-    if (Object.keys(result).length === 0) {
-      return res.status(404).json({message: "No books found for this author"});
-    }
-    
-    res.json(result);
   });
 
+  try {
+    // Create a Promise 
+    const getISBNPromise = new Promise((resolve, reject) => {
+        setTimeout(() => {
+            if (num > 1 && num < 10) {
+                resolve
+            }
+        }
+    })
+}
+// Get book details based on ISBN
+public_users.get('/isbn/:isbn', async function (req, res) {
+    try {
+      let num = parseInt(req.params.isbn);
+      
+      if (num < 1 || num > 10) {
+        // Send error message
+        res.send("Select a correct isbn");
+      } else {
+        // Create a Promise to get the book
+        const getBookPromise = new Promise((resolve, reject) => {
+          setTimeout(() => {
+            if (books[num]) {
+              resolve(books[num]);
+            } else {
+              reject(new Error("Book not found"));
+            }
+          }, 100); // Simulate async operation
+        });
+  
+        // Await the Promise
+        const book = await getBookPromise;
+        res.send("Book Searched: " + JSON.stringify(book, null, 4));
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: "Error retrieving book",
+        error: error.message
+      });
+    }
+  });
+  
+// Get book details based on author
+public_users.get('/author/:author', async function (req, res) {
+    try {
+        const authorName = req.params.author;
+        const result = {};
+        
+        // Iterate through books object
+        Object.keys(books).forEach(isbn => {
+            if (books[isbn].author.toLowerCase() === authorName.toLowerCase()) {
+                result[isbn] = books[isbn];
+            }
+        });
+        
+        if (Object.keys(result).length === 0) {
+            return res.status(404).json({message: "No books found for this author"});
+        }
+        
+        res.json(result);
+    } catch (error) {
+        console.error('Error fetching books by author:', error);
+        res.status(500).json({message: "Internal server error"});
+    }
+});
+
 // Get all books based on title
-public_users.get('/title/:title',function (req, res) {
+public_users.get('/title/:title', async function (req, res) {
+    try {
     const titleName = req.params.title;
     
     const result = {};
@@ -83,6 +138,10 @@ public_users.get('/title/:title',function (req, res) {
     }
 
     res.json(result);
+    } catch(error) {
+        console.error('Error fetching author:', error);
+        res.status(500).json({message: "Internal server error"});
+    }
 });
 
 //  Get book review
